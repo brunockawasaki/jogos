@@ -66,6 +66,15 @@ ol li{background:var(--soft);border-radius:12px;padding:8px 14px;font-weight:700
 ol li span{color:var(--muted);flex:none;width:2.2em}
 .empty{color:var(--muted);font-weight:700;margin:0}
 .done{background:var(--card3)}
+.pay{font:800 clamp(17px,4vw,20px) "Baloo 2",sans-serif;background:var(--paper);color:#1d1a16;border:3px solid #1d1a16;border-radius:999px;padding:10px 26px;min-height:54px;cursor:pointer;
+box-shadow:0 5px 0 rgba(0,0,0,.25);width:min(100%,360px);transition:transform .08s,box-shadow .08s}
+.pay:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.pay:focus-visible{outline:3px solid var(--card2);outline-offset:4px}
+.prenda{width:min(100%,520px);border-radius:22px;background:var(--card2);padding:12px;box-shadow:0 8px 0 rgba(0,0,0,.2)}
+.prenda[hidden]{display:none}
+.prenda .face{min-height:150px;padding:30px 22px 26px}
+.prenda .num{color:var(--card2)}
+.prenda .q{font-size:clamp(21px,4.6vw,30px)}
 @media(max-width:600px){.deck{aspect-ratio:5/4.4}}
 </style>
 </head>
@@ -88,6 +97,15 @@ ol li span{color:var(--muted);flex:none;width:2.2em}
   </div>
 
   <button class="draw" id="draw" type="button">Tirar um tema</button>
+  <button class="pay" id="pay" type="button">Não respondeu? Pagar prenda</button>
+
+  <div class="prenda" id="prenda" hidden aria-live="polite">
+    <div class="face">
+      <span class="num" id="pnum">Prenda</span>
+      <p class="q" id="pq"></p>
+      <span class="tag" id="pcount"></span>
+    </div>
+  </div>
 
   <div class="row">
     <div class="meter">
@@ -96,7 +114,7 @@ ol li span{color:var(--muted);flex:none;width:2.2em}
     </div>
     <button class="ghost" id="reset" type="button">Embaralhar de novo</button>
   </div>
-  <p class="keys">Atalho: aperte <kbd>espaço</kbd> para tirar outro tema</p>
+  <p class="keys">Atalho: aperte <kbd>espaço</kbd> para tirar outro tema e <kbd>P</kbd> para sortear uma prenda</p>
 
   <section class="hist">
     <h2>Últimos temas</h2>
@@ -128,6 +146,25 @@ const TEMAS = [
 "O que levar para uma ilha deserta","Superpoderes","Profissões do futuro","Coisas que um robô faria","Invenções","Coisas que têm motor","Marcas de carro","Marcas de roupa","Marcas de comida ou bebida","Programas de TV",
 "Músicas famosas","Estilos musicais","Danças","Coisas que se faz numa balada","Coisas para fazer quando chove","Coisas que se faz de manhã","Coisas que se faz antes de dormir","Coisas do café da manhã","Lanches","Comidas de rua",
 "Comidas com queijo","Comidas com chocolate","Comidas que se come com a mão","Comidas de outros países","Coisas para pôr no cachorro-quente","Coisas que você faz no celular","Coisas que tem num quarto","Móveis","Eletrodomésticos","Coisas que tem num jardim"
+];
+
+const PRENDAS = [
+"Imite uma galinha por 10 segundos","Fale com voz de robô até a sua próxima vez","Cante o refrão de uma música que todo mundo conhece","Imite alguém da família (com carinho!) e o grupo adivinha quem é","Dance por 15 segundos sem música",
+"Conte uma piada. Se ninguém rir, conte outra","Faça um elogio sincero para cada pessoa da roda","Faça 10 polichinelos","Fique numa perna só até a próxima rodada","Narre o que está acontecendo na sala como um locutor de futebol",
+"Fique parado como estátua até alguém rir","Fale 3 vezes rápido: \"O rato roeu a roupa do rei de Roma\"","Desfile como modelo pela sala, ida e volta","Conte uma história engraçada que aconteceu com você","Fale com um sotaque diferente até a sua próxima vez",
+"Faça uma declaração de amor dramática para um objeto da sala","Cante \"Parabéns pra você\" como se fosse ópera","Faça uma careta e segure por 10 segundos","Dê um abraço em quem está à sua direita","Faça uma propaganda de 15 segundos de um objeto que o grupo escolher",
+"Faça a dança da galinha","Faça o som de 3 animais diferentes","Fale 5 palavras que rimam com \"pão\"","Ande como um pinguim até a porta e volte","Faça uma massagem de 30 segundos nos ombros de quem você escolher",
+"Imite alguém famoso e o grupo tem que adivinhar","Faça a mímica de um filme e o grupo tem que adivinhar","Conte até 20 dizendo \"pim\" no lugar dos números 3, 6, 9...","Sirva água para todo mundo da roda","Fale seu nome completo de trás pra frente",
+"Faça um rap de 4 versos sobre quem está à sua esquerda","Dê três gargalhadas de vilão","Fique sem falar até a próxima rodada, só com gestos","Imite um bebê chorando por 10 segundos","Entreviste a pessoa ao seu lado como se fosse repórter de TV",
+"Diga \"eu amo minha família\" em 3 vozes diferentes","Faça cara de surpresa toda vez que alguém falar, até a próxima rodada","Cante uma música infantil inteira","Imite o jeito de rir de alguém da roda","Faça 5 agachamentos",
+"Equilibre um objeto na cabeça por 10 segundos","Faça a comemoração de gol mais exagerada que conseguir","Leia uma frase qualquer como se estivesse muito emocionado","Conte o que você comeu ontem como se fosse uma notícia urgente","Faça um discurso de agradecimento como se tivesse ganhado o Oscar",
+"Imite um macaco por 10 segundos","Fale \"Stop!\" em 3 sotaques diferentes","Use um chapéu, boné ou acessório que o grupo escolher até o fim da rodada","Deixe alguém fazer um penteado maluco no seu cabelo","Faça um coração com as mãos para cada pessoa da roda",
+"Cante uma música trocando toda a letra por \"lá lá lá\" e o grupo adivinha","Faça a \"ola\" de estádio sozinho","Ande como um robô pela sala","Assobie uma música e o grupo tem que adivinhar","Fale com voz de criança até a sua próxima vez",
+"Conte uma lembrança engraçada da sua infância","Faça 3 caretas diferentes para uma foto","Fale como apresentador de programa de auditório por 15 segundos","Mande um áudio carinhoso para alguém da família que não está aqui","Fique responsável por recolher os copos no fim do jogo",
+"Fale 10 frutas em 10 segundos","Diga o nome de todo mundo da roda de trás pra frente","Faça a dança do robô","Imite um cachorro pedindo comida","Bata palmas no ritmo de uma música e o grupo adivinha qual é",
+"Faça uma pose de super-herói e diga seu nome de herói","Narre os próximos 20 segundos como um documentário de animais","Faça um poema de 2 versos para quem está na sua frente","Ande de costas até a porta e volte","Peça desculpas por ter perdido, de joelhos e bem dramático",
+"Dê uma volta na mesa pulando num pé só","Fale 3 vezes rápido: \"Três pratos de trigo para três tigres tristes\"","Dance como se estivesse numa festa dos anos 80","Imite o som de uma moto ligando","Faça o barulho de 3 instrumentos musicais com a boca",
+"Fale tudo cantando até a sua próxima vez","Conte uma qualidade sua que ninguém aqui conhece","Faça uma reverência para cada pessoa da roda","Imite um gato se espreguiçando","Faça um comercial de margarina abraçando quem está do seu lado"
 ];
 
 const $ = id => document.getElementById(id);
@@ -171,9 +208,35 @@ const tirar = () => {
   render();
 };
 
-$('draw').addEventListener('click', tirar);
+let pPilha = [], pUsadas = 0;
+const embaralharPrendas = () => {
+  pPilha = PRENDAS.map((t, i) => i);
+  for (let i = pPilha.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pPilha[i], pPilha[j]] = [pPilha[j], pPilha[i]];
+  }
+  pUsadas = 0;
+};
+const pagar = () => {
+  if (!pPilha.length) embaralharPrendas();
+  const box = $('prenda');
+  pUsadas++;
+  $('pq').textContent = PRENDAS[pPilha.pop()];
+  $('pnum').textContent = 'Prenda';
+  $('pcount').textContent = pUsadas + ' de ' + PRENDAS.length;
+  box.hidden = false;
+  box.classList.remove('flip');
+  void box.offsetWidth;
+  box.classList.add('flip');
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
+$('draw').addEventListener('click', () => { $('prenda').hidden = true; tirar(); });
+$('pay').addEventListener('click', pagar);
 $('reset').addEventListener('click', () => {
   embaralhar();
+  embaralharPrendas();
+  $('prenda').hidden = true;
   $('card').classList.remove('done');
   $('num').textContent = 'Pronto?';
   $('q').textContent = 'Baralho embaralhado!';
@@ -181,10 +244,13 @@ $('reset').addEventListener('click', () => {
   render();
 });
 document.addEventListener('keydown', e => {
-  if (e.code === 'Space' && e.target.tagName !== 'BUTTON') { e.preventDefault(); tirar(); }
+  if (e.target.tagName === 'BUTTON') return;
+  if (e.code === 'Space') { e.preventDefault(); $('prenda').hidden = true; tirar(); }
+  if (e.key === 'p' || e.key === 'P') pagar();
 });
 
 embaralhar();
+embaralharPrendas();
 render();
 }
 </script>
